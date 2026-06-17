@@ -229,7 +229,76 @@ function Avatar({ name, size=36, isLeader=false }) {
   );
 }
 
-// ── UPCOMING STRIP ────────────────────────────────────────────────────────────
+// ── PHOTO MODAL ───────────────────────────────────────────────────────────────
+function PhotoModal({ player, standings, onClose }) {
+  const rank = standings.findIndex(p => p.name === player.name) + 1;
+  const isLeader = rank === 1;
+  const photo = PHOTOS[player.name];
+  const initials = player.name.slice(0,2).toUpperCase();
+
+  useEffect(() => {
+    const h = e => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  return (
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:200,background:'rgba(0,0,0,0.85)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)',animation:'fadeIn 0.2s ease-out'}}>
+      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes popIn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}} @keyframes spinRing2{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+      <div onClick={e=>e.stopPropagation()} style={{display:'flex',flexDirection:'column',alignItems:'center',animation:'popIn 0.25s cubic-bezier(0.34,1.56,0.64,1)',padding:'0 24px',maxWidth:360,width:'100%'}}>
+        <div style={{position:'relative',width:220,height:220,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:20}}>
+          {isLeader && <div style={{position:'absolute',inset:-6,borderRadius:'50%',background:'conic-gradient(#f5c542,#e8a020,#f5c542,#fff8dc,#f5c542)',animation:'spinRing2 3s linear infinite'}}/>}
+          {photo ? (
+            <>
+              <div style={{position:'absolute',inset:isLeader?3:0,borderRadius:'50%',background:'#0a1a0f'}}/>
+              <img src={photo} alt={player.name} style={{position:'relative',zIndex:1,width:isLeader?204:220,height:isLeader?204:220,borderRadius:'50%',objectFit:'cover',objectPosition:'center top',border:isLeader?'none':`3px solid ${rank===2?'#aaa':rank===3?'#cd7f32':'#2a4a2a'}`}}/>
+            </>
+          ) : (
+            <div style={{position:'relative',zIndex:1,width:isLeader?204:220,height:isLeader?204:220,borderRadius:'50%',background:'#162d1e',display:'flex',alignItems:'center',justifyContent:'center',border:isLeader?'none':`3px solid ${rank===2?'#aaa':rank===3?'#cd7f32':'#2a4a2a'}`}}>
+              <span style={{fontSize:64,fontWeight:900,color:isLeader?'#f5c542':'#4a7a5a'}}>{initials}</span>
+            </div>
+          )}
+          <div style={{position:'absolute',bottom:8,right:8,zIndex:2,width:40,height:40,borderRadius:'50%',background:'#0a1a0f',border:'2px solid #1a3020',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>
+            {MEDAL[rank-1]||<span style={{fontWeight:900,fontSize:14,color:'#4a7a5a'}}>{rank}</span>}
+          </div>
+        </div>
+
+        <div style={{fontSize:36,fontWeight:900,color:isLeader?'#f5c542':'#f0f0f0',letterSpacing:-1,marginBottom:4,textAlign:'center'}}>{player.name}</div>
+        {isLeader && <div style={{fontSize:13,color:'#4caf78',fontWeight:600,letterSpacing:2,textTransform:'uppercase',marginBottom:16}}>👑 Leading</div>}
+
+        <div style={{display:'flex',gap:0,background:'#0e1a11',border:'1px solid #1a3020',borderRadius:14,overflow:'hidden',marginBottom:16,width:'100%'}}>
+          {[['Pts',player.pts,'#4caf78'],['W',player.w,'#4caf78'],['D',player.d,'#aaa'],['L',player.l,'#c0504d'],['GD',player.gd>=0?`+${player.gd}`:player.gd,'#778']].map(([label,val,color],i,arr)=>(
+            <div key={label} style={{flex:1,textAlign:'center',padding:'14px 8px',borderRight:i<arr.length-1?'1px solid #1a3020':'none'}}>
+              <div style={{fontSize:22,fontWeight:900,color,lineHeight:1}}>{val}</div>
+              <div style={{fontSize:10,color:'#3a5a3a',textTransform:'uppercase',letterSpacing:1,marginTop:3}}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{width:'100%',background:'#0e1a11',border:'1px solid #1a3020',borderRadius:12,padding:'12px 14px',marginBottom:14}}>
+          <div style={{fontSize:10,color:'#3a5a3a',letterSpacing:1.2,textTransform:'uppercase',fontWeight:700,marginBottom:8}}>Teams</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+            {player.seeds.map(t=><span key={t} style={{background:'#2a2412',border:'1px solid #3a3018',borderRadius:5,padding:'4px 8px',fontSize:12,color:'#d4af37'}}>★ {FLAGS[t]||'🏳'} {t}</span>)}
+            {player.teams.map(t=><span key={t} style={{background:'#142018',border:'1px solid #223322',borderRadius:5,padding:'4px 8px',fontSize:12,color:'#ccc'}}>{FLAGS[t]||'🏳'} {t}</span>)}
+          </div>
+        </div>
+
+        <div style={{width:'100%',background:'#0e1a11',border:'1px solid #1a3020',borderRadius:12,padding:'12px 14px',marginBottom:20}}>
+          <div style={{fontSize:10,color:'#3a5a3a',letterSpacing:1.2,textTransform:'uppercase',fontWeight:700,marginBottom:8}}>⚽ Golden Boot Picks</div>
+          {player.goldenBoot.map((gb,i)=>(
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',fontSize:13}}>
+              <span>{gb.player} <span style={{color:'#3a5a3a'}}>({gb.team})</span></span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{fontSize:12,color:'#2a4a2a',letterSpacing:1}}>tap anywhere to close</div>
+      </div>
+    </div>
+  );
+}
+
+
 function UpcomingStrip({ fixtures }) {
   if (!fixtures.length) return null;
   const today = new Date().toISOString().slice(0,10);
@@ -266,7 +335,7 @@ function UpcomingStrip({ fixtures }) {
 }
 
 // ── TABLE TAB (main league table — front view) ────────────────────────────────
-function TableTab({ standings, results, fixtures, expanded, setExpanded }) {
+function TableTab({ standings, results, fixtures, expanded, setExpanded, onPhotoClick }) {
   return (
     <div>
       <div style={{display:'grid',gridTemplateColumns:'26px 1fr 30px 26px 26px 26px 36px',padding:'5px 10px',fontSize:9,color:'#2a4a2a',letterSpacing:1.2,textTransform:'uppercase',fontWeight:700}}>
@@ -279,20 +348,22 @@ function TableTab({ standings, results, fixtures, expanded, setExpanded }) {
         const isExp=expanded===p.name, pr=getPlayerResults(p,results);
         return (
           <div key={p.name} style={{marginBottom:4}}>
-            <div onClick={()=>setExpanded(isExp?null:p.name)} style={{display:'grid',gridTemplateColumns:'26px 1fr 30px 26px 26px 26px 36px',alignItems:'center',padding:'10px 10px',cursor:'pointer',borderRadius:isExp?'9px 9px 0 0':9,background:i===0?'linear-gradient(90deg,#1e4028,#182e1e)':i<3?'#101e12':'#0d1810',border:i===0?'1px solid #2d5a3d':'1px solid #111a12'}}>
-              <span style={{fontSize:i<3?15:11,color:i>=3?'#283228':'inherit'}}>{MEDAL[i]||(i+1)}</span>
+            <div style={{display:'grid',gridTemplateColumns:'26px 1fr 30px 26px 26px 26px 36px',alignItems:'center',padding:'10px 10px',borderRadius:isExp?'9px 9px 0 0':9,background:i===0?'linear-gradient(90deg,#1e4028,#182e1e)':i<3?'#101e12':'#0d1810',border:i===0?'1px solid #2d5a3d':'1px solid #111a12'}}>
+              <span onClick={()=>setExpanded(isExp?null:p.name)} style={{fontSize:i<3?15:11,color:i>=3?'#283228':'inherit',cursor:'pointer'}}>{MEDAL[i]||(i+1)}</span>
               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <Avatar name={p.name} size={32} isLeader={i===0}/>
-                <div>
+                <div onClick={e=>{e.stopPropagation();onPhotoClick(p.name);}} style={{flexShrink:0,cursor:'pointer',borderRadius:'50%',transition:'transform 0.15s'}} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.12)'} onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
+                  <Avatar name={p.name} size={32} isLeader={i===0}/>
+                </div>
+                <div onClick={()=>setExpanded(isExp?null:p.name)} style={{cursor:'pointer',flex:1}}>
                   <div style={{fontWeight:800,fontSize:14,color:i===0?'#f5c542':'#eee'}}>{p.name}</div>
                   <div style={{fontSize:10,color:'#2a5030'}}>{p.seeds.length+p.teams.length} teams</div>
                 </div>
               </div>
-              <span style={{textAlign:'center',fontSize:12,color:'#334'}}>{p.played}</span>
-              <span style={{textAlign:'center',fontSize:13,fontWeight:p.w>0?700:400,color:p.w>0?'#4caf78':'#223'}}>{p.w}</span>
-              <span style={{textAlign:'center',fontSize:12,color:p.d>0?'#aaa':'#223'}}>{p.d}</span>
-              <span style={{textAlign:'center',fontSize:12,color:p.l>0?'#c0504d':'#223'}}>{p.l}</span>
-              <span style={{textAlign:'right',fontWeight:900,fontSize:18,color:i===0?'#f5c542':p.pts>0?'#4caf78':'#1e2e1e'}}>{p.pts}</span>
+              <span onClick={()=>setExpanded(isExp?null:p.name)} style={{textAlign:'center',fontSize:12,color:'#334',cursor:'pointer'}}>{p.played}</span>
+              <span onClick={()=>setExpanded(isExp?null:p.name)} style={{textAlign:'center',fontSize:13,fontWeight:p.w>0?700:400,color:p.w>0?'#4caf78':'#223',cursor:'pointer'}}>{p.w}</span>
+              <span onClick={()=>setExpanded(isExp?null:p.name)} style={{textAlign:'center',fontSize:12,color:p.d>0?'#aaa':'#223',cursor:'pointer'}}>{p.d}</span>
+              <span onClick={()=>setExpanded(isExp?null:p.name)} style={{textAlign:'center',fontSize:12,color:p.l>0?'#c0504d':'#223',cursor:'pointer'}}>{p.l}</span>
+              <span onClick={()=>setExpanded(isExp?null:p.name)} style={{textAlign:'right',fontWeight:900,fontSize:18,color:i===0?'#f5c542':p.pts>0?'#4caf78':'#1e2e1e',cursor:'pointer'}}>{p.pts}</span>
             </div>
             {isExp&&(
               <div style={{background:'#0b1510',border:i===0?'1px solid #2d5a3d':'1px solid #111a12',borderTop:'none',borderRadius:'0 0 9px 9px',padding:'12px 13px'}}>
@@ -591,6 +662,7 @@ export default function App() {
   const [lastFetched, setLastFetched]   = useState(null);
   const [fetchError, setFetchError]     = useState(false);
   const [splashLeader, setSplashLeader] = useState(null);
+  const [modalPlayer, setModalPlayer] = useState(null);
   const [view, setView]                 = useState('table');
   const [expanded, setExpanded]         = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
@@ -626,6 +698,7 @@ export default function App() {
   return (
     <div style={{minHeight:'100vh',background:'#0a1a0f',fontFamily:"'Inter','Helvetica Neue',sans-serif",color:'#f0f0f0',paddingBottom:80}}>
       {splashLeader&&<Splash leader={splashLeader} onDone={()=>setSplashLeader(null)}/>}
+      {modalPlayer&&<PhotoModal player={standings.find(p=>p.name===modalPlayer)} standings={standings} onClose={()=>setModalPlayer(null)}/>}
 
       <div style={{background:'linear-gradient(160deg,#0e2818 0%,#081408 100%)',borderBottom:'1px solid #1a3020',padding:'18px 16px 0'}}>
         <div style={{maxWidth:580,margin:'0 auto'}}>
@@ -640,7 +713,9 @@ export default function App() {
 
           {leader?.pts>0&&(
             <div onClick={()=>setSplashLeader(leader)} style={{background:'linear-gradient(90deg,#1c3d24,#142a1a)',border:'1px solid #2d5a3d',borderRadius:10,padding:'8px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
-              <Avatar name={leader.name} size={40} isLeader={true}/>
+              <div onClick={e=>{e.stopPropagation();setModalPlayer(leader.name);}} style={{cursor:'pointer'}}>
+                <Avatar name={leader.name} size={40} isLeader={true}/>
+              </div>
               <div>
                 <div style={{fontSize:10,color:'#4a7a5a',fontWeight:600,textTransform:'uppercase',letterSpacing:1}}>👑 Leading</div>
                 <div style={{fontSize:16,fontWeight:900,color:'#f5c542'}}>{leader.name}</div>
@@ -668,7 +743,7 @@ export default function App() {
       <div style={{maxWidth:580,margin:'0 auto',padding:'14px 12px'}}>
         {loading
           ? <div style={{textAlign:'center',padding:60}}><style>{`@keyframes spin2{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style><div style={{fontSize:40,display:'inline-block',animation:'spin2 1.2s linear infinite',marginBottom:14}}>⚽</div><div style={{color:'#4caf78',fontWeight:600}}>Fetching live scores…</div></div>
-          : view==='table'    ? <TableTab standings={standings} results={results} fixtures={fixtures} expanded={expanded} setExpanded={setExpanded}/>
+          : view==='table'    ? <TableTab standings={standings} results={results} fixtures={fixtures} expanded={expanded} setExpanded={setExpanded} onPhotoClick={setModalPlayer}/>
           : view==='results'  ? <ResultsTab results={results}/>
           : view==='fixtures' ? <FixturesTab fixtures={fixtures}/>
           : view==='groups'   ? <GroupsTab results={results} fixtures={fixtures}/>
